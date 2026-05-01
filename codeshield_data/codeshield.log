@@ -1,0 +1,119 @@
+2026-05-02 00:16:47 [INFO    ] codeshield: ============================================================
+2026-05-02 00:16:47 [INFO    ] codeshield:   CodeShield v2.0 — Starting up
+2026-05-02 00:16:47 [INFO    ] codeshield: ============================================================
+2026-05-02 00:16:47 [INFO    ] codeshield.database: Database initialized at ./codeshield_data/codeshield.db
+2026-05-02 00:16:47 [INFO    ] codeshield.database: Applying schema version 1 (current: 0)
+2026-05-02 00:16:48 [INFO    ] codeshield.database: Schema version 1 applied successfully
+2026-05-02 00:16:48 [INFO    ] codeshield: Database ready at ./codeshield_data/codeshield.db
+2026-05-02 00:16:48 [INFO    ] codeshield: Running startup data sync...
+2026-05-02 00:16:51 [INFO    ] codeshield.sync: Starting data sync for 2 sources...
+2026-05-02 00:16:51 [INFO    ] codeshield.sync.osv: Syncing vulnerability data from OSV.dev...
+2026-05-02 00:16:51 [INFO    ] codeshield.sync.spdx: Syncing SPDX license list...
+2026-05-02 00:16:51 [WARNING ] codeshield.sync.osv: OSV API request failed for PyPI: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:16:51 [INFO    ] codeshield.sync.spdx: Processing 729 SPDX licenses
+2026-05-02 00:16:51 [INFO    ] codeshield.sync.spdx: SPDX sync complete: added=729, modified=0
+2026-05-02 00:17:11 [WARNING ] codeshield.sync.osv: OSV API request failed for npm: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:17:17 [WARNING ] codeshield.sync.osv: OSV API request failed for Go: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:17:23 [WARNING ] codeshield.sync.osv: OSV API request failed for crates.io: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:17:23 [WARNING ] codeshield.sync.osv: OSV API request failed for RubyGems: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:17:24 [WARNING ] codeshield.sync.osv: OSV API request failed for Maven: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:17:30 [WARNING ] codeshield.sync.osv: OSV API request failed for NuGet: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:17:30 [WARNING ] codeshield.sync.osv: OSV API request failed for Packagist: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:17:30 [INFO    ] codeshield.sync.osv: OSV sync complete: added=327, modified=1
+2026-05-02 00:17:30 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:17:30 [INFO    ] codeshield.sync: DATA SYNC REPORT (39.9s)
+2026-05-02 00:17:30 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:17:30 [INFO    ] codeshield.sync:   ✓ spdx_licenses        status=updated    added=729 modified=0
+2026-05-02 00:17:30 [INFO    ] codeshield.sync:   ✓ osv_vulnerabilities  status=updated    added=327 modified=1
+2026-05-02 00:17:30 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:17:30 [INFO    ] codeshield: Loading scanner plugins...
+2026-05-02 00:17:30 [INFO    ] codeshield.plugins: Discovering plugins in: D:\SAST_SBOM_Scanner\codeshield\plugins
+2026-05-02 00:17:30 [ERROR   ] codeshield.plugins: Failed to load plugin license_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:30 [ERROR   ] codeshield.plugins: Failed to load plugin sast_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:31 [ERROR   ] codeshield.plugins: Failed to load plugin sca_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:31 [ERROR   ] codeshield.plugins: Failed to load plugin secrets_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:31 [WARNING ] codeshield: No scanner plugins loaded!
+2026-05-02 00:17:31 [WARNING ] codeshield: Plugin load error: Failed to load plugin license_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:31 [WARNING ] codeshield: Plugin load error: Failed to load plugin sast_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:31 [WARNING ] codeshield: Plugin load error: Failed to load plugin sca_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:31 [WARNING ] codeshield: Plugin load error: Failed to load plugin secrets_plugin.py: attempted relative import beyond top-level package
+2026-05-02 00:17:31 [INFO    ] codeshield: CodeShield ready — listening on 127.0.0.1:5000
+2026-05-02 00:19:39 [INFO    ] codeshield: ============================================================
+2026-05-02 00:19:39 [INFO    ] codeshield:   CodeShield v2.0 — Starting up
+2026-05-02 00:19:39 [INFO    ] codeshield: ============================================================
+2026-05-02 00:19:39 [INFO    ] codeshield.database: Database initialized at ./codeshield_data/codeshield.db
+2026-05-02 00:19:39 [INFO    ] codeshield: Database ready at ./codeshield_data/codeshield.db
+2026-05-02 00:19:39 [INFO    ] codeshield: Running startup data sync...
+2026-05-02 00:19:40 [INFO    ] codeshield.sync: Starting data sync for 2 sources...
+2026-05-02 00:19:40 [INFO    ] codeshield.sync.osv: Syncing vulnerability data from OSV.dev...
+2026-05-02 00:19:40 [INFO    ] codeshield.sync.spdx: Syncing SPDX license list...
+2026-05-02 00:19:40 [INFO    ] codeshield.sync.spdx: SPDX data unchanged (hash match)
+2026-05-02 00:19:41 [WARNING ] codeshield.sync.osv: OSV API request failed for PyPI: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:05 [WARNING ] codeshield.sync.osv: OSV API request failed for npm: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:13 [WARNING ] codeshield.sync.osv: OSV API request failed for Go: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:20 [WARNING ] codeshield.sync.osv: OSV API request failed for crates.io: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:20 [WARNING ] codeshield.sync.osv: OSV API request failed for RubyGems: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:21 [WARNING ] codeshield.sync.osv: OSV API request failed for Maven: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:26 [WARNING ] codeshield.sync.osv: OSV API request failed for NuGet: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:26 [WARNING ] codeshield.sync.osv: OSV API request failed for Packagist: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:20:26 [INFO    ] codeshield.sync.osv: OSV sync complete: added=0, modified=328
+2026-05-02 00:20:26 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:20:26 [INFO    ] codeshield.sync: DATA SYNC REPORT (46.8s)
+2026-05-02 00:20:26 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:20:26 [INFO    ] codeshield.sync:   [--] spdx_licenses        status=unchanged  added=0 modified=0
+2026-05-02 00:20:26 [INFO    ] codeshield.sync:   [OK] osv_vulnerabilities  status=updated    added=0 modified=328
+2026-05-02 00:20:26 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:20:26 [INFO    ] codeshield: Loading scanner plugins...
+2026-05-02 00:20:26 [INFO    ] codeshield.plugins: Discovering plugins in: D:\SAST_SBOM_Scanner\codeshield\plugins
+2026-05-02 00:20:26 [INFO    ] codeshield.plugins.license: Loaded 729 SPDX license definitions
+2026-05-02 00:20:26 [INFO    ] codeshield.plugins: Registered plugin: 'license' v1.0.0 from license_plugin.py
+2026-05-02 00:20:27 [INFO    ] codeshield.plugins.sast: Seeding 16 default SAST rules
+2026-05-02 00:20:27 [INFO    ] codeshield.plugins.sast: Loaded 16 SAST rules
+2026-05-02 00:20:27 [INFO    ] codeshield.plugins: Registered plugin: 'sast' v1.0.0 from sast_plugin.py
+2026-05-02 00:20:27 [ERROR   ] codeshield.plugins: Plugin validation failed for sca_plugin.py: maximum recursion depth exceeded
+2026-05-02 00:20:27 [INFO    ] codeshield.plugins.secrets: Seeding 14 default secrets patterns
+2026-05-02 00:20:27 [INFO    ] codeshield.plugins.secrets: Loaded 14 secrets patterns
+2026-05-02 00:20:27 [INFO    ] codeshield.plugins: Registered plugin: 'secrets' v1.0.0 from secrets_plugin.py
+2026-05-02 00:20:27 [INFO    ] codeshield: Loaded 3 plugins: license, sast, secrets
+2026-05-02 00:20:27 [WARNING ] codeshield: Plugin load error: Plugin validation failed for sca_plugin.py: maximum recursion depth exceeded
+2026-05-02 00:20:27 [INFO    ] codeshield: CodeShield ready — listening on 127.0.0.1:5000
+2026-05-02 00:21:51 [INFO    ] codeshield: ============================================================
+2026-05-02 00:21:51 [INFO    ] codeshield:   CodeShield v2.0 — Starting up
+2026-05-02 00:21:51 [INFO    ] codeshield: ============================================================
+2026-05-02 00:21:51 [INFO    ] codeshield.database: Database initialized at ./codeshield_data/codeshield.db
+2026-05-02 00:21:51 [INFO    ] codeshield: Database ready at ./codeshield_data/codeshield.db
+2026-05-02 00:21:51 [INFO    ] codeshield: Running startup data sync...
+2026-05-02 00:21:51 [INFO    ] codeshield.sync: Starting data sync for 2 sources...
+2026-05-02 00:21:51 [INFO    ] codeshield.sync.osv: Syncing vulnerability data from OSV.dev...
+2026-05-02 00:21:51 [INFO    ] codeshield.sync.spdx: Syncing SPDX license list...
+2026-05-02 00:21:52 [WARNING ] codeshield.sync.osv: OSV API request failed for PyPI: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:21:52 [INFO    ] codeshield.sync.spdx: SPDX data unchanged (hash match)
+2026-05-02 00:22:13 [WARNING ] codeshield.sync.osv: OSV API request failed for npm: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:22:20 [WARNING ] codeshield.sync.osv: OSV API request failed for Go: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:22:25 [WARNING ] codeshield.sync.osv: OSV API request failed for crates.io: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:22:26 [WARNING ] codeshield.sync.osv: OSV API request failed for RubyGems: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:22:26 [WARNING ] codeshield.sync.osv: OSV API request failed for Maven: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:22:33 [WARNING ] codeshield.sync.osv: OSV API request failed for NuGet: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:22:33 [WARNING ] codeshield.sync.osv: OSV API request failed for Packagist: 400 Client Error: Bad Request for url: https://api.osv.dev/v1/querybatch
+2026-05-02 00:22:33 [INFO    ] codeshield.sync.osv: OSV sync complete: added=0, modified=328
+2026-05-02 00:22:33 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:22:33 [INFO    ] codeshield.sync: DATA SYNC REPORT (42.0s)
+2026-05-02 00:22:33 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:22:33 [INFO    ] codeshield.sync:   [--] spdx_licenses        status=unchanged  added=0 modified=0
+2026-05-02 00:22:33 [INFO    ] codeshield.sync:   [OK] osv_vulnerabilities  status=updated    added=0 modified=328
+2026-05-02 00:22:33 [INFO    ] codeshield.sync: ============================================================
+2026-05-02 00:22:33 [INFO    ] codeshield: Loading scanner plugins...
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins: Discovering plugins in: D:\SAST_SBOM_Scanner\codeshield\plugins
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins.license: Loaded 729 SPDX license definitions
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins: Registered plugin: 'license' v1.0.0 from license_plugin.py
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins.sast: Loaded 16 SAST rules
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins: Registered plugin: 'sast' v1.0.0 from sast_plugin.py
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins.sca: Built 38 interval trees from vulnerability DB
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins: Registered plugin: 'sca' v1.0.0 from sca_plugin.py
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins.secrets: Loaded 14 secrets patterns
+2026-05-02 00:22:33 [INFO    ] codeshield.plugins: Registered plugin: 'secrets' v1.0.0 from secrets_plugin.py
+2026-05-02 00:22:33 [INFO    ] codeshield: Loaded 4 plugins: license, sast, sca, secrets
+2026-05-02 00:22:33 [INFO    ] codeshield: CodeShield ready — listening on 127.0.0.1:5000
+2026-05-02 00:31:24 [INFO    ] codeshield.context: Scan context built: 23 files, 3 languages, 2 manifests
+2026-05-02 00:31:25 [INFO    ] codeshield.engine: Persisted 3 findings for scan 22488953-4102-4cef-840a-c07809584325
+2026-05-02 00:31:25 [INFO    ] codeshield.engine: Cleaned up temp directory for scan 22488953-4102-4cef-840a-c07809584325

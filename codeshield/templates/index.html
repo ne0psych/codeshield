@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CodeShield - Enterprise Security Scanner Dashboard">
+    <title>CodeShield - Security Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="brand">
+                <svg class="brand-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span class="brand-name">CodeShield</span>
+                <span class="brand-version">v2.1</span>
+            </div>
+        </div>
+        <div class="topbar-center">
+            <nav class="nav-tabs">
+                <button class="nav-btn active" data-view="scanner" id="nav-scanner">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                    Dashboard
+                </button>
+                <button class="nav-btn" data-view="history" id="nav-history">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    History
+                </button>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+                <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Scanner View -->
+        <div id="view-scanner" class="view active">
+
+            <!-- Upload Section -->
+            <section id="upload-section" class="upload-area">
+                <div class="upload-zone" id="upload-zone">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <h3>Drop your ZIP codebase here</h3>
+                    <p>or click to browse &mdash; max 500MB</p>
+                    <button class="btn btn-primary" id="browse-btn">Browse Files</button>
+                    <input type="file" id="file-input" accept=".zip" hidden>
+                </div>
+            </section>
+
+            <!-- Progress Section -->
+            <section id="progress-section" class="hidden">
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <h2>Scanning: <span id="scan-filename"></span></h2>
+                        <div class="progress-timer" id="elapsed-time">00:00</div>
+                    </div>
+                    <div class="plugin-progress" id="plugin-progress"></div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results-section" class="hidden">
+                <!-- Top Controls -->
+                <div class="results-toolbar">
+                    <div class="toolbar-left">
+                        <h2>Scan Results</h2>
+                        <div class="risk-score-badge" id="risk-score-badge" title="Global Risk Score">--</div>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-sm btn-outline" id="btn-download-xlsx" title="Download Excel">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            XLSX
+                        </button>
+                        <button class="btn btn-sm btn-outline" id="btn-download-pdf" title="Download PDF">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            PDF
+                        </button>
+                        <button class="btn btn-sm btn-primary" id="new-scan-btn">New Scan</button>
+                    </div>
+                </div>
+
+                <!-- Severity Cards -->
+                <div class="severity-cards">
+                    <div class="sev-card sev-critical" id="card-critical"><span class="card-count">0</span><span class="card-label">Critical</span></div>
+                    <div class="sev-card sev-high" id="card-high"><span class="card-count">0</span><span class="card-label">High</span></div>
+                    <div class="sev-card sev-medium" id="card-medium"><span class="card-count">0</span><span class="card-label">Medium</span></div>
+                    <div class="sev-card sev-low" id="card-low"><span class="card-count">0</span><span class="card-label">Low</span></div>
+                    <div class="sev-card sev-info" id="card-info"><span class="card-count">0</span><span class="card-label">Info</span></div>
+                </div>
+
+                <!-- Trend Badges -->
+                <div class="trend-row" id="trend-row">
+                    <span class="trend-badge trend-new" id="trend-new">0 New</span>
+                    <span class="trend-badge trend-recurring" id="trend-recurring">0 Recurring</span>
+                </div>
+
+                <!-- OWASP Heatmap -->
+                <div class="owasp-heatmap-panel" id="owasp-panel">
+                    <h3>OWASP Top 10 Coverage</h3>
+                    <div class="owasp-grid" id="owasp-grid"></div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="all">All</button>
+                    <button class="tab-btn" data-tab="sast">SAST</button>
+                    <button class="tab-btn" data-tab="sca">SCA</button>
+                    <button class="tab-btn" data-tab="secrets">Secrets</button>
+                    <button class="tab-btn" data-tab="license">License</button>
+                    <button class="tab-btn" data-tab="supplychain">Supply Chain</button>
+                    <button class="tab-btn" data-tab="apisecurity">API Security</button>
+                    <button class="tab-btn" data-tab="codequality">Code Quality</button>
+                    <button class="tab-btn" data-tab="sbom">SBOM</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-bar" id="filters-bar">
+                    <select id="filter-severity" class="filter-select">
+                        <option value="">All Severities</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                        <option value="INFO">Info</option>
+                    </select>
+                    <select id="filter-owasp" class="filter-select">
+                        <option value="">All OWASP</option>
+                        <option value="A01:2021">A01 - Broken Access Control</option>
+                        <option value="A02:2021">A02 - Cryptographic Failures</option>
+                        <option value="A03:2021">A03 - Injection</option>
+                        <option value="A04:2021">A04 - Insecure Design</option>
+                        <option value="A05:2021">A05 - Security Misconfiguration</option>
+                        <option value="A06:2021">A06 - Vulnerable Components</option>
+                        <option value="A07:2021">A07 - Auth Failures</option>
+                        <option value="A08:2021">A08 - Integrity Failures</option>
+                        <option value="A09:2021">A09 - Logging Failures</option>
+                        <option value="A10:2021">A10 - SSRF</option>
+                    </select>
+                    <input type="text" id="filter-search" class="filter-input" placeholder="Search CWE, title, file...">
+                    <select id="filter-trend" class="filter-select">
+                        <option value="">All Trends</option>
+                        <option value="new">New</option>
+                        <option value="recurring">Recurring</option>
+                    </select>
+                </div>
+
+                <!-- Findings List -->
+                <div id="findings-container">
+                    <div id="findings-list" class="findings-list"></div>
+                    <div id="empty-state" class="empty-state hidden"><p>No findings match your filters</p></div>
+                </div>
+
+                <!-- SBOM Container -->
+                <div id="sbom-container" class="hidden">
+                    <div id="sbom-list" class="sbom-list"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- History View -->
+        <div id="view-history" class="view">
+            <div class="history-panel">
+                <h2>Scan History</h2>
+                <div id="history-list" class="history-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Finding Detail Modal -->
+    <div class="modal-overlay hidden" id="finding-modal">
+        <div class="modal-container">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

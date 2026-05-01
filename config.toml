@@ -1,0 +1,62 @@
+# CodeShield Configuration
+# Override any value via environment variables prefixed with CODESHIELD_
+# Example: CODESHIELD_DB_PATH=/custom/path/codeshield.db
+
+[server]
+host = "127.0.0.1"
+port = 5000
+debug = false
+
+[database]
+# Path to SQLite database file
+path = "./codeshield_data/codeshield.db"
+
+[scan]
+# Maximum ZIP file size in bytes (default: 500MB)
+max_zip_size = 524288000
+# Maximum uncompressed size in bytes (default: 2GB)
+max_uncompressed_size = 2147483648
+# Maximum number of files in ZIP
+max_file_count = 50000
+# Maximum nesting depth for directories
+max_nesting_depth = 20
+# Scan timeout in seconds per plugin
+plugin_timeout = 300
+# Temporary directory for extraction (uses system temp if empty)
+temp_directory = ""
+# Thread pool size for concurrent plugin execution
+thread_pool_size = 4
+
+[plugins]
+# Directory containing scanner plugins
+directory = "./codeshield/plugins"
+
+[sync]
+# Enable/disable startup sync
+enabled = true
+# OSV.dev API base URL
+osv_api_url = "https://api.osv.dev/v1"
+# NVD API key (optional, set via CODESHIELD_NVD_API_KEY env var)
+nvd_api_key = ""
+# SPDX license list URL
+spdx_url = "https://raw.githubusercontent.com/spdx/license-list-data/main/json/licenses.json"
+# Remote SAST rules source URL
+sast_rules_url = ""
+# Remote secrets patterns source URL
+secrets_patterns_url = ""
+# Sync timeout per source in seconds
+sync_timeout = 60
+# Maximum concurrent sync requests
+sync_concurrency = 4
+
+[license_compliance]
+# Allowed licenses (SPDX identifiers). Empty = allow all
+allowed_licenses = []
+# Denied licenses (SPDX identifiers). Takes precedence over allowed
+denied_licenses = ["AGPL-3.0-only", "AGPL-3.0-or-later", "SSPL-1.0"]
+
+[logging]
+# Log level: DEBUG, INFO, WARNING, ERROR
+level = "INFO"
+# Log file path (empty = stdout only)
+file = "./codeshield_data/codeshield.log"

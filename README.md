@@ -11,6 +11,10 @@
   <img src="https://img.shields.io/badge/SBOM-CycloneDX%201.4-orange" alt="SBOM"/>
 </p>
 
+<p align="center">
+  <img src="images/Dashboard.png" alt="CodeShield Dashboard" width="90%"/>
+</p>
+
 ---
 
 ## Overview
@@ -32,6 +36,21 @@ CodeShield is a **production-ready, locally-running** Python application that pe
 ### Security Enrichment (per finding)
 
 Every finding includes: **CWE ID**, **OWASP Top 10** mapping, **MITRE ATT&CK** technique, **PCI-DSS** & **HIPAA** references, exploit availability, fix effort estimate, and trend analysis (new vs recurring).
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="images/Dashboard.png" alt="Dashboard"/><br/><p align="center"><strong>Security Dashboard</strong> — aggregated project stats, severity pie chart, OWASP heatmap</p></td>
+    <td width="50%"><img src="images/Results.png" alt="Scan Results"/><br/><p align="center"><strong>Scan Results</strong> — filterable findings with CWE, OWASP, CVE tags</p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="images/New_scan.png" alt="New Scan"/><br/><p align="center"><strong>New Scan</strong> — project-scoped upload with real-time progress</p></td>
+    <td width="50%"><img src="images/Plugins.png" alt="Plugins & Sync"/><br/><p align="center"><strong>Plugins & Sync</strong> — 7 scanner plugins, multi-source vulnerability sync</p></td>
+  </tr>
+</table>
 
 ---
 

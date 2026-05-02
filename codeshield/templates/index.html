@@ -147,6 +147,19 @@
                         <h2>Scanning: <span id="scan-filename"></span></h2>
                         <span class="timer" id="elapsed-time">00:00</span>
                     </div>
+                    <!-- Phase steps -->
+                    <div class="scan-phases" id="scan-phases">
+                        <div class="phase active" id="phase-upload"><span class="phase-dot"></span><span class="phase-label">Uploading</span></div>
+                        <div class="phase-line"></div>
+                        <div class="phase" id="phase-scan"><span class="phase-dot"></span><span class="phase-label">Scanning</span></div>
+                        <div class="phase-line"></div>
+                        <div class="phase" id="phase-done"><span class="phase-dot"></span><span class="phase-label">Complete</span></div>
+                    </div>
+                    <!-- Overall progress bar -->
+                    <div class="scan-progress-track" id="scan-progress-track">
+                        <div class="scan-progress-fill" id="scan-progress-fill" style="width:0%"></div>
+                    </div>
+                    <p class="scan-status-text" id="scan-status-text">Preparing upload…</p>
                     <div id="plugin-progress"></div>
                 </div>
             </section>
@@ -161,10 +174,11 @@
                         <button class="btn btn-sm" id="btn-pdf">PDF</button>
                     </div>
                 </div>
-                <!-- Project context bar + scan selector -->
-                <div class="trend-row" id="results-project-bar" style="margin-bottom:0.5rem;gap:1rem;align-items:center">
-                    <span style="font-size:.82rem;color:var(--text-2)">Project: <strong id="results-project-name">-</strong></span>
+                <!-- Project + scan selectors -->
+                <div class="trend-row" id="results-project-bar" style="margin-bottom:0.5rem;gap:1rem;align-items:center;flex-wrap:wrap">
+                    <select id="results-project-select" style="max-width:260px;font-size:.78rem"><option value="">— Select project —</option></select>
                     <select id="results-scan-select" style="max-width:340px;font-size:.78rem"></select>
+                    <span style="font-size:.78rem;color:var(--text-3)" id="results-project-name"></span>
                 </div>
                 <div class="sev-row">
                     <div class="sev-card sev-critical"><span class="sc-count" id="rc-critical">0</span><span class="sc-label">Critical</span></div>
@@ -201,11 +215,16 @@
             <!-- ==================== SBOM ==================== -->
             <section class="page" id="page-sbom">
                 <h1 class="page-title">Software Bill of Materials</h1>
+                <div class="trend-row" style="margin-bottom:0.75rem;gap:1rem;align-items:center;flex-wrap:wrap">
+                    <select id="sbom-project-select" style="max-width:260px;font-size:.78rem"><option value="">— Select project —</option></select>
+                    <select id="sbom-scan-select" style="max-width:340px;font-size:.78rem"></select>
+                    <span style="font-size:.78rem;color:var(--text-3)" id="sbom-count"></span>
+                </div>
                 <div class="table-wrap"><table class="data-table" id="sbom-table">
                     <thead><tr><th>Package</th><th>Version</th><th>Ecosystem</th><th>License</th><th>PURL</th></tr></thead>
                     <tbody id="sbom-body"></tbody>
                 </table></div>
-                <div class="empty-state" id="no-sbom"><p>Run a scan to view SBOM</p></div>
+                <div class="empty-state hidden" id="no-sbom"><p>Select a project and scan to view SBOM components.</p></div>
             </section>
 
             <!-- ==================== REPORTS ==================== -->

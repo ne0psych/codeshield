@@ -119,6 +119,9 @@ fi?.addEventListener('change',e=>{if(e.target.files[0])startUpload(e.target.file
 ['dragleave','drop'].forEach(ev=>uz?.addEventListener(ev,e=>{e.preventDefault();uz.classList.remove('drag-over');}));
 uz?.addEventListener('drop',e=>{if(e.dataTransfer.files[0])startUpload(e.dataTransfer.files[0]);});
 
+function setPhase(p){['upload','scan','done'].forEach(id=>{const el=$('#phase-'+id);if(!el)return;el.className='phase';});if(p==='upload'){$('#phase-upload').className='phase active';}else if(p==='scan'){$('#phase-upload').className='phase done';$('#phase-scan').className='phase active';}else if(p==='done'){$('#phase-upload').className='phase done';$('#phase-scan').className='phase done';$('#phase-done').className='phase done';}else if(p==='error'){$('#phase-upload').className='phase done';$('#phase-scan').className='phase error';}}
+function setProgress(pct,txt){const f=$('#scan-progress-fill');if(f)f.style.width=pct+'%';const t=$('#scan-status-text');if(t)t.textContent=txt||'';}
+
 async function startUpload(file){
   if(!file.name.endsWith('.zip'))return alert('Only .zip files accepted');
   const projSel=$('#scan-project-select')?.value||'';
@@ -127,46 +130,56 @@ async function startUpload(file){
   const fd=new FormData();fd.append('file',file);
   if(projSel)fd.append('project_id',projSel);else fd.append('project_name',projName);
   hide(uz);show($('#progress-section'));$('#scan-filename').textContent=file.name;
-  $('#plugin-progress').innerHTML='<div class="plug-item"><div class="spinner"></div><span class="plug-name">Uploading…</span></div>';
+  setPhase('upload');setProgress(10,'Uploading file…');
+  $('#plugin-progress').innerHTML='';
   let t0=Date.now(),timer=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);$('#elapsed-time').textContent=`${String(s/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;},1000);
   try{
+    setProgress(25,'Sending to server…');
     const r=await fetch('/api/upload',{method:'POST',body:fd});const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Upload failed');
     activeScanId=d.scan_id;activeProjectId=d.project_id;
+    setPhase('scan');setProgress(40,'Upload complete. Starting scan…');
     listenSSE(d.scan_id,timer);
-  }catch(e){clearInterval(timer);$('#plugin-progress').innerHTML=`<div class="plug-item failed"><div class="plug-icon failed">✗</div><span class="plug-name">${esc(e.message)}</span></div>`;}
+  }catch(e){clearInterval(timer);setPhase('error');setProgress(100,'Upload failed');$('#plugin-progress').innerHTML=`<div class="plug-item failed"><div class="plug-icon failed">✗</div><span class="plug-name">${esc(e.message)}</span></div>`;}
 }
 
 function listenSSE(sid,timer){
-  const es=new EventSource(`/api/scan/${sid}/events`);const ps={};const c=$('#plugin-progress');
-  es.addEventListener('plugin_start',e=>{const d=JSON.parse(e.data);ps[d.plugin]={s:'run'};rPP(c,ps);});
-  es.addEventListener('plugin_complete',e=>{const d=JSON.parse(e.data);ps[d.plugin]={s:'ok',n:d.findings_count||0};rPP(c,ps);});
-  es.addEventListener('plugin_error',e=>{const d=JSON.parse(e.data);ps[d.plugin]={s:'err',e:d.error};rPP(c,ps);});
-  es.addEventListener('scan_complete',e=>{es.close();clearInterval(timer);const d=JSON.parse(e.data);c.innerHTML+=`<div class="plug-item complete"><div class="plug-icon complete">✓</div><span class="plug-name">Complete — ${d.total_findings||0} findings</span></div>`;setTimeout(()=>nav('results'),800);});
-  es.addEventListener('scan_error',e=>{es.close();clearInterval(timer);const d=JSON.parse(e.data);c.innerHTML+=`<div class="plug-item failed"><div class="plug-icon failed">✗</div><span class="plug-name">${esc(d.error)}</span></div>`;});
+  const es=new EventSource(`/api/scan/${sid}/events`);const ps={};const c=$('#plugin-progress');let total=7,done=0;
+  es.addEventListener('plugin_start',e=>{const d=JSON.parse(e.data);ps[d.plugin]={s:'run'};rPP(c,ps);setProgress(40+Math.round((done/total)*50),'Running: '+d.plugin+'…');});
+  es.addEventListener('plugin_complete',e=>{const d=JSON.parse(e.data);ps[d.plugin]={s:'ok',n:d.findings_count||0};done++;rPP(c,ps);setProgress(40+Math.round((done/total)*50),d.plugin+' complete');});
+  es.addEventListener('plugin_error',e=>{const d=JSON.parse(e.data);ps[d.plugin]={s:'err',e:d.error};done++;rPP(c,ps);});
+  es.addEventListener('scan_complete',e=>{es.close();clearInterval(timer);const d=JSON.parse(e.data);setPhase('done');setProgress(100,'Scan complete — '+( d.total_findings||0)+' findings');c.innerHTML+=`<div class="plug-item complete"><div class="plug-icon complete">✓</div><span class="plug-name">All plugins finished — ${d.total_findings||0} findings</span></div>`;setTimeout(()=>nav('results'),1200);});
+  es.addEventListener('scan_error',e=>{es.close();clearInterval(timer);const d=JSON.parse(e.data);setPhase('error');setProgress(100,'Scan failed');c.innerHTML+=`<div class="plug-item failed"><div class="plug-icon failed">✗</div><span class="plug-name">${esc(d.error)}</span></div>`;});
   es.onerror=()=>es.close();
 }
 function rPP(c,st){c.innerHTML='';Object.entries(st).forEach(([n,s])=>{let ic='<div class="spinner"></div>',cl='';if(s.s==='ok'){ic='<div class="plug-icon complete">✓</div>';cl='complete';}else if(s.s==='err'){ic='<div class="plug-icon failed">✗</div>';cl='failed';}c.innerHTML+=`<div class="plug-item ${cl}">${ic}<span class="plug-name">${esc(n)}</span><span class="plug-detail">${s.s==='ok'?s.n+' findings':esc(s.e||'')}</span></div>`;});}
 
 /* ═══════════ RESULTS (project-scoped) ═══════════ */
 async function renderResults(){
-  if(!activeProjectId){$('#results-project-name').textContent='No project selected';$('#findings-body').innerHTML='';return;}
+  await loadProjects();
+  // Populate project selector
+  const pSel=$('#results-project-select');if(pSel){
+    pSel.innerHTML='<option value="">— Select project —</option>';
+    projects.forEach(p=>{const o=document.createElement('option');o.value=p.project_id;o.textContent=p.name;if(p.project_id===activeProjectId)o.selected=true;pSel.appendChild(o);});
+    pSel.onchange=()=>{activeProjectId=pSel.value;activeScanId=null;loadProjectScans();};}
+  if(!activeProjectId&&projects.length>0){activeProjectId=projects[0].project_id;if(pSel)pSel.value=activeProjectId;}
+  if(activeProjectId)loadProjectScans();
+  else{$('#results-project-name').textContent='';$('#findings-body').innerHTML='';show($('#no-findings'));}
+}
+async function loadProjectScans(){
+  if(!activeProjectId)return;
   try{
     const pd=await api('/api/projects/'+activeProjectId);
     const proj=pd.project||{};const scans=pd.scans||[];
-    $('#results-project-name').textContent=proj.name||'Unknown';
-
-    // Populate scan selector
+    $('#results-project-name').textContent=proj.name||'';
     const sel=$('#results-scan-select');if(sel){sel.innerHTML='';
-      scans.forEach((s,i)=>{const o=document.createElement('option');o.value=s.scan_id;o.textContent=`${fmtD(s.started_at)} — ${s.total_findings||0} findings`;if(i===0||s.scan_id===activeScanId)o.selected=true;sel.appendChild(o);});
-      if(scans.length>0&&!activeScanId)activeScanId=scans[0].scan_id;
-      sel.onchange=()=>{activeScanId=sel.value;loadScanFindings(activeScanId);};
-    }
+      if(!scans.length){sel.innerHTML='<option value="">No scans yet</option>';$('#findings-body').innerHTML='';show($('#no-findings'));return;}
+      scans.forEach((s,i)=>{const o=document.createElement('option');o.value=s.scan_id;o.textContent=`${fmtD(s.started_at)} — ${s.total_findings||0} findings`;if(s.scan_id===activeScanId||(!activeScanId&&i===0))o.selected=true;sel.appendChild(o);});
+      if(!activeScanId)activeScanId=scans[0].scan_id;
+      sel.onchange=()=>{activeScanId=sel.value;loadScanFindings(activeScanId);};}
     if(activeScanId)loadScanFindings(activeScanId);
-    else{$('#findings-body').innerHTML='';show($('#no-findings'));}
   }catch(e){console.error(e);}
 }
-
 async function loadScanFindings(sid){
   try{
     const d=await api(`/api/scan/${sid}/results`);
@@ -215,12 +228,36 @@ $('#modal')?.addEventListener('click',e=>{if(e.target.id==='modal')hide($('#moda
 
 /* ═══════════ SBOM (project-scoped) ═══════════ */
 async function renderSbom(){
-  const tb=$('#sbom-body');tb.innerHTML='';
-  if(!activeProjectId||!activeScanId){$('#no-sbom').querySelector('p').textContent='Select a project first, then view SBOM.';show($('#no-sbom'));return;}
+  await loadProjects();
+  // Project selector
+  const pSel=$('#sbom-project-select');if(pSel){
+    pSel.innerHTML='<option value="">— Select project —</option>';
+    projects.forEach(p=>{const o=document.createElement('option');o.value=p.project_id;o.textContent=p.name;if(p.project_id===activeProjectId)o.selected=true;pSel.appendChild(o);});
+    pSel.onchange=()=>{activeProjectId=pSel.value;activeScanId=null;loadSbomScans();};}
+  if(!activeProjectId&&projects.length>0){activeProjectId=projects[0].project_id;if(pSel)pSel.value=activeProjectId;}
+  if(activeProjectId)loadSbomScans();
+  else{$('#sbom-body').innerHTML='';$('#sbom-count').textContent='';show($('#no-sbom'));}
+}
+async function loadSbomScans(){
+  if(!activeProjectId){show($('#no-sbom'));return;}
   try{
-    const d=await api(`/api/scan/${activeScanId}/results`);
+    const pd=await api('/api/projects/'+activeProjectId);
+    const scans=(pd.scans||[]).filter(s=>s.status==='complete');
+    const sel=$('#sbom-scan-select');if(sel){sel.innerHTML='';
+      if(!scans.length){sel.innerHTML='<option>No scans</option>';$('#sbom-body').innerHTML='';show($('#no-sbom'));return;}
+      scans.forEach((s,i)=>{const o=document.createElement('option');o.value=s.scan_id;o.textContent=`${fmtD(s.started_at)} — ${s.filename}`;if(s.scan_id===activeScanId||(!activeScanId&&i===0))o.selected=true;sel.appendChild(o);});
+      if(!activeScanId)activeScanId=scans[0].scan_id;
+      sel.onchange=()=>{activeScanId=sel.value;loadSbomData(activeScanId);};}
+    if(activeScanId)loadSbomData(activeScanId);
+  }catch(e){show($('#no-sbom'));}
+}
+async function loadSbomData(sid){
+  const tb=$('#sbom-body');tb.innerHTML='';
+  try{
+    const d=await api(`/api/scan/${sid}/results`);
     const comps=(d.sbom&&d.sbom.components)||[];
-    if(!comps.length){show($('#no-sbom'));return;}hide($('#no-sbom'));
+    if(!comps.length){$('#sbom-count').textContent='0 components';show($('#no-sbom'));return;}
+    hide($('#no-sbom'));$('#sbom-count').textContent=comps.length+' components';
     comps.forEach(c=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${esc(c.name)}</td><td>${esc(c.version)}</td><td>${esc(c.ecosystem)}</td><td>${esc(c.license)}</td><td title="${esc(c.purl)}">${esc((c.purl||'').slice(0,50))}</td>`;tb.appendChild(tr);});
   }catch(e){show($('#no-sbom'));}
 }

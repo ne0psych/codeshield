@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project data (generated at runtime)
+codeshield_data/
+*.db
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+
+# Uploaded/temp files
+codeshield_upload_*
+codeshield_scan_*
+
+# Environment
+.env
+.env.local
+
+# Reports (generated)
+*.xlsx
+*.pdf
+
+# Legacy files (deprecated)
+scanner.py
+report_generator.py
+main.py
+sbom.json
+setup.ps1

@@ -72,60 +72,13 @@ def sync_osv_data(config: SyncConfig) -> dict:
 
 def _sync_ecosystem(api_url: str, ecosystem: str,
                     config: SyncConfig) -> dict:
-    """Fetch vulnerabilities for a single ecosystem."""
-    result = {"added": 0, "modified": 0}
-    db = get_db()
+    """Fetch vulnerabilities for a single ecosystem using per-package queries.
 
-    try:
-        # Query OSV for vulnerabilities in this ecosystem
-        response = requests.post(
-            f"{api_url}/querybatch",
-            json={
-                "queries": [
-                    {"package": {"ecosystem": ecosystem}, "version": ""}
-                ]
-            },
-            timeout=config.sync_timeout,
-            headers={"User-Agent": "CodeShield/2.0"}
-        )
-        response.raise_for_status()
-        data = response.json()
+    Note: OSV /querybatch requires specific package name + version, not
+    ecosystem-only queries. We use /query per package instead.
+    """
+    return _sync_fallback_vulns(ecosystem, api_url, config)
 
-    except requests.RequestException as exc:
-        logger.warning("OSV API request failed for %s: %s", ecosystem, exc)
-        # Try fetching individual well-known vulnerabilities instead
-        return _sync_fallback_vulns(ecosystem, api_url, config)
-
-    # Process results
-    results_list = data.get("results", [{}])
-    if not results_list:
-        return result
-
-    vulns = results_list[0].get("vulns", [])
-    for vuln_entry in vulns:
-        vuln_id = vuln_entry.get("id", "")
-        if not vuln_id:
-            continue
-
-        try:
-            # Fetch full vulnerability details
-            detail_resp = requests.get(
-                f"{api_url}/vulns/{vuln_id}",
-                timeout=config.sync_timeout,
-                headers={"User-Agent": "CodeShield/2.0"}
-            )
-            if detail_resp.status_code != 200:
-                continue
-
-            vuln_data = detail_resp.json()
-            counts = _upsert_vulnerability(db, vuln_data, ecosystem)
-            result["added"] += counts["added"]
-            result["modified"] += counts["modified"]
-
-        except Exception as exc:
-            logger.debug("Failed to fetch details for %s: %s", vuln_id, exc)
-
-    return result
 
 
 def _sync_fallback_vulns(ecosystem: str, api_url: str,
@@ -140,14 +93,32 @@ def _sync_fallback_vulns(ecosystem: str, api_url: str,
     well_known_packages = {
         "PyPI": ["django", "flask", "requests", "pyyaml", "pillow",
                  "cryptography", "sqlalchemy", "urllib3", "jinja2",
-                 "werkzeug", "numpy", "lxml", "paramiko"],
+                 "werkzeug", "numpy", "lxml", "paramiko", "httpx",
+                 "fastapi", "celery", "boto3", "pydantic", "aiohttp",
+                 "gunicorn", "setuptools", "pip", "wheel", "certifi",
+                 "idna", "charset-normalizer", "pygments", "babel"],
         "npm": ["lodash", "express", "axios", "minimist", "qs",
-                "path-to-regexp", "json5", "jsonwebtoken"],
+                "path-to-regexp", "json5", "jsonwebtoken", "webpack",
+                "react", "next", "vue", "angular", "passport",
+                "mongoose", "sequelize", "bcrypt", "helmet", "cors",
+                "socket.io", "commander", "chalk", "yargs", "semver",
+                "tar", "glob-parent", "trim-newlines", "node-fetch"],
         "Maven": ["org.apache.logging.log4j:log4j-core",
                   "org.springframework:spring-core",
-                  "com.fasterxml.jackson.core:jackson-databind"],
+                  "com.fasterxml.jackson.core:jackson-databind",
+                  "org.apache.struts:struts2-core",
+                  "org.apache.tomcat.embed:tomcat-embed-core",
+                  "commons-collections:commons-collections"],
         "Go": ["golang.org/x/crypto", "golang.org/x/net",
-               "golang.org/x/text"],
+               "golang.org/x/text", "github.com/gin-gonic/gin",
+               "github.com/gorilla/mux", "github.com/dgrijalva/jwt-go"],
+        "crates.io": ["regex", "serde", "tokio", "hyper", "actix-web"],
+        "RubyGems": ["rails", "rack", "nokogiri", "devise", "puma",
+                     "activesupport", "actionpack", "bundler"],
+        "NuGet": ["Newtonsoft.Json", "System.Text.Json",
+                  "Microsoft.AspNetCore.Http"],
+        "Packagist": ["symfony/http-kernel", "laravel/framework",
+                      "guzzlehttp/guzzle", "monolog/monolog"],
     }
 
     packages = well_known_packages.get(ecosystem, [])

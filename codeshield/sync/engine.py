@@ -3,11 +3,20 @@ CodeShield Data Sync Engine
 Orchestrates startup data synchronization from remote sources.
 Uses ETags/content hashing for incremental updates.
 Fails gracefully per source — cached data used when sources unavailable.
+
+Sources:
+  - OSV.dev (primary vulnerability data)
+  - NVD (CVE/CVSS enrichment)
+  - GitHub Advisory Database (GHSA advisories)
+  - OSS Index (purl-based enrichment)
+  - SPDX (license definitions)
+  - Remote rules (SAST/secrets patterns)
 """
 
 import time
 import hashlib
 import logging
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Callable, Optional
 from datetime import datetime, timezone
@@ -53,7 +62,7 @@ class SyncReport:
                 "degraded": "[!!]", "failed": "[XX]"
             }.get(info["status"], "[??]")
             logger.info(
-                "  %s %-20s status=%-10s added=%d modified=%d%s",
+                "  %s %-24s status=%-10s added=%d modified=%d%s",
                 status_icon, name, info["status"],
                 info["records_added"], info["records_modified"],
                 f" error={info['error']}" if info["error"] else ""
@@ -88,9 +97,9 @@ def _update_sync_metadata(source_name: str, content_hash: str = "",
 
 def run_sync(config: SyncConfig) -> SyncReport:
     """
-    Run all data sync operations before accepting scan requests.
-    Uses concurrent HTTP requests with timeout per source.
-    Fails gracefully — unavailable sources use cached data.
+    Run primary data sync (OSV + SPDX) at startup, then kick off
+    background sync for NVD, GitHub Advisory, and OSS Index.
+    Primary sources block startup; secondary sources run in background.
     """
     from .osv import sync_osv_data
     from .spdx import sync_spdx_data
@@ -103,30 +112,30 @@ def run_sync(config: SyncConfig) -> SyncReport:
         report.finalize()
         return report
 
-    # Define sync tasks
-    tasks: Dict[str, Callable] = {
+    # ── Primary sync tasks (block startup) ──
+    primary_tasks: Dict[str, Callable] = {
         "osv_vulnerabilities": lambda: sync_osv_data(config),
         "spdx_licenses": lambda: sync_spdx_data(config),
     }
 
-    # Add optional sources
+    # Optional primary sources
     if config.sast_rules_url:
-        tasks["remote_sast_rules"] = lambda: sync_remote_rules(
+        primary_tasks["remote_sast_rules"] = lambda: sync_remote_rules(
             config, "sast"
         )
     if config.secrets_patterns_url:
-        tasks["remote_secrets_patterns"] = lambda: sync_remote_rules(
+        primary_tasks["remote_secrets_patterns"] = lambda: sync_remote_rules(
             config, "secrets"
         )
 
-    logger.info("Starting data sync for %d sources...", len(tasks))
+    logger.info("Starting data sync for %d sources...", len(primary_tasks))
 
-    # Execute sync tasks concurrently
-    max_workers = min(config.sync_concurrency, len(tasks))
+    # Execute primary tasks concurrently
+    max_workers = min(config.sync_concurrency, len(primary_tasks))
     with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
         future_map = {
             pool.submit(func): name
-            for name, func in tasks.items()
+            for name, func in primary_tasks.items()
         }
 
         for future in as_completed(future_map):
@@ -144,9 +153,47 @@ def run_sync(config: SyncConfig) -> SyncReport:
                 report.add_source(
                     name, status="failed", error=str(exc)
                 )
-                # Update metadata to flag degraded state
                 _update_sync_metadata(name, status="degraded")
 
     report.finalize()
     report.log_report()
+
+    # ── Background sync tasks (don't block startup) ──
+    _start_background_sync(config)
+
     return report
+
+
+def _start_background_sync(config: SyncConfig):
+    """Launch background thread for secondary data sources."""
+
+    def _run():
+        from .nvd import sync_nvd_data
+        from .github_advisory import sync_github_advisories
+        from .ossindex import sync_ossindex_data
+
+        secondary_tasks = {
+            "nvd_vulnerabilities": lambda: sync_nvd_data(config),
+            "github_advisories": lambda: sync_github_advisories(config),
+            "ossindex": lambda: sync_ossindex_data(config),
+        }
+
+        logger.info("Background sync started for %d secondary sources...",
+                     len(secondary_tasks))
+
+        for name, func in secondary_tasks.items():
+            try:
+                result = func()
+                logger.info(
+                    "Background sync [%s]: status=%s added=%d modified=%d",
+                    name, result.get("status", "?"),
+                    result.get("added", 0), result.get("modified", 0)
+                )
+            except Exception as exc:
+                logger.warning("Background sync failed for %s: %s", name, exc)
+                _update_sync_metadata(name, status="degraded")
+
+        logger.info("Background sync complete for all secondary sources")
+
+    thread = threading.Thread(target=_run, daemon=True, name="bg-sync")
+    thread.start()

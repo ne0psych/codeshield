@@ -287,7 +287,10 @@ def create_routes(app: Flask, config: AppConfig,
             ts = f["trend_status"] or "new"
             if ts in trends:
                 trends[ts] += 1
-        return jsonify({"scan_id": scan_id, "trends": trends})
+        return jsonify({
+            "scan_id": scan_id, "trends": trends,
+            "new_count": trends["new"], "recurring_count": trends["recurring"],
+        })
 
     @app.route("/api/finding/<int:finding_id>/false-positive", methods=["POST"])
     def toggle_false_positive(finding_id: int):
@@ -300,6 +303,31 @@ def create_routes(app: Flask, config: AppConfig,
         with db.transaction() as conn:
             conn.execute("UPDATE findings SET false_positive = ? WHERE id = ?", (new_val, finding_id))
         return jsonify({"id": finding_id, "false_positive": bool(new_val)})
+
+    @app.route("/api/sync/<source_name>")
+    def sync_status(source_name: str):
+        """Get sync status for a specific data source."""
+        allowed_sources = {
+            "osv_vulnerabilities", "spdx_licenses", "nvd_vulnerabilities",
+            "github_advisories", "ossindex", "remote_sast_rules",
+            "remote_secrets_patterns",
+        }
+        if source_name not in allowed_sources:
+            return jsonify({"error": "Unknown source"}), 404
+        db = get_db()
+        row = db.fetchone(
+            "SELECT * FROM sync_metadata WHERE source_name = ?",
+            (source_name,)
+        )
+        if not row:
+            return jsonify({"source": source_name, "status": "not_synced"}), 200
+        return jsonify({
+            "source": source_name,
+            "status": row["status"] or "unknown",
+            "records_count": row["records_count"] or 0,
+            "last_sync_at": row["last_sync_at"] or "",
+            "content_hash": row["content_hash"][:12] if row["content_hash"] else "",
+        })
 
     # Error handlers — never expose internal details
     @app.errorhandler(400)

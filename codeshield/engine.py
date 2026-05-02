@@ -135,10 +135,11 @@ class ScanEngine:
                 zf.extract(member, target_dir)
 
     def start_scan(self, zip_path: str, original_filename: str,
+                   project_id: str = "",
                    progress_callback: Optional[Callable] = None) -> str:
         """
         Execute a full scan pipeline:
-        1. Create scan record
+        1. Create scan record (linked to project)
         2. Extract ZIP to isolated temp dir
         3. Build scan context
         4. Run all plugins concurrently
@@ -156,9 +157,9 @@ class ScanEngine:
         # Create scan record
         with db.transaction() as conn:
             conn.execute(
-                "INSERT INTO scans (scan_id, filename, file_hash, status, started_at) "
-                "VALUES (?, ?, ?, 'running', ?)",
-                (scan_id, original_filename, file_hash,
+                "INSERT INTO scans (scan_id, project_id, filename, file_hash, status, started_at) "
+                "VALUES (?, ?, ?, ?, 'running', ?)",
+                (scan_id, project_id, original_filename, file_hash,
                  datetime.now(timezone.utc).isoformat())
             )
 
@@ -352,6 +353,19 @@ class ScanEngine:
                  severity_counts["MEDIUM"], severity_counts["LOW"],
                  severity_counts["INFO"], scan_id)
             )
+
+            # Update parent project counters
+            scan_row = conn.execute(
+                "SELECT project_id FROM scans WHERE scan_id = ?", (scan_id,)
+            ).fetchone()
+            if scan_row and scan_row[0]:
+                project_id = scan_row[0]
+                conn.execute(
+                    "UPDATE projects SET last_scan_at = ?, "
+                    "total_scans = (SELECT COUNT(*) FROM scans WHERE project_id = ?) "
+                    "WHERE project_id = ?",
+                    (datetime.now(timezone.utc).isoformat(), project_id, project_id)
+                )
 
         logger.info("Persisted %d findings for scan %s", total, scan_id)
 

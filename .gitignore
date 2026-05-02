@@ -24,28 +24,31 @@ env/
 .DS_Store
 Thumbs.db
 
-# Project data (generated at runtime)
+# Runtime data (databases)
+data/
 codeshield_data/
 *.db
 *.db-wal
 *.db-shm
 
 # Logs
+logs/
 *.log
 
-# Uploaded/temp files
+# Uploaded / temp files
 codeshield_upload_*
 codeshield_scan_*
+tmp/
 
 # Environment
 .env
 .env.local
 
-# Reports (generated)
+# Reports (generated at runtime)
 *.xlsx
 *.pdf
 
-# Legacy files (deprecated)
+# Legacy files (deprecated - do not commit)
 scanner.py
 report_generator.py
 main.py

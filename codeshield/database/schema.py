@@ -8,7 +8,7 @@ from .connection import DatabaseManager
 
 logger = logging.getLogger("codeshield.database")
 
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 # Migration v2: add enrichment columns to findings
 MIGRATION_V2_SQL = """
@@ -28,6 +28,24 @@ CREATE INDEX IF NOT EXISTS idx_finding_cwe ON findings(cwe_id);
 CREATE INDEX IF NOT EXISTS idx_finding_owasp ON findings(owasp_category);
 CREATE INDEX IF NOT EXISTS idx_finding_mitre ON findings(mitre_id);
 CREATE INDEX IF NOT EXISTS idx_finding_trend ON findings(trend_status);
+"""
+
+# Migration v3: add projects table and project_id FK to scans
+MIGRATION_V3_SQL = """
+CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_scan_at TIMESTAMP,
+    total_scans INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_project_id ON projects(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_name ON projects(name);
+
+ALTER TABLE scans ADD COLUMN project_id TEXT DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_scan_project ON scans(project_id);
 """
 
 SCHEMA_SQL = """
@@ -124,10 +142,24 @@ CREATE TABLE IF NOT EXISTS license_definitions (
 );
 CREATE INDEX IF NOT EXISTS idx_license_spdx ON license_definitions(spdx_id);
 
--- Scan records
+-- Projects container
+CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_scan_at TIMESTAMP,
+    total_scans INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_project_id ON projects(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_name ON projects(name);
+
+-- Scan records (belong to a project)
 CREATE TABLE IF NOT EXISTS scans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     scan_id TEXT NOT NULL UNIQUE,
+    project_id TEXT DEFAULT '',
     filename TEXT NOT NULL,
     file_hash TEXT DEFAULT '',
     status TEXT NOT NULL DEFAULT 'pending',
@@ -143,6 +175,7 @@ CREATE TABLE IF NOT EXISTS scans (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_scan_id ON scans(scan_id);
+CREATE INDEX IF NOT EXISTS idx_scan_project ON scans(project_id);
 
 -- Individual findings from scans
 CREATE TABLE IF NOT EXISTS findings (
@@ -227,6 +260,46 @@ def initialize_schema(db: DatabaseManager) -> None:
             )
             logger.info("Schema version 2 applied successfully")
             current = 2
+
+        if current < 3:
+            logger.info("Applying schema migration v3 (current: %d)", current)
+            for line in MIGRATION_V3_SQL.strip().split(";"):
+                line = line.strip()
+                if line:
+                    try:
+                        conn.execute(line)
+                    except Exception as exc:
+                        if "duplicate column" not in str(exc).lower():
+                            logger.debug("Migration v3 statement skipped: %s", exc)
+
+            # Auto-migrate orphan scans: create a project per unique filename
+            orphans = conn.execute(
+                "SELECT DISTINCT filename FROM scans WHERE project_id = '' OR project_id IS NULL"
+            ).fetchall()
+            import uuid as _uuid
+            from datetime import datetime as _dt, timezone as _tz
+            for row in orphans:
+                fname = row[0] or "Unnamed Project"
+                proj_name = fname.replace('.zip', '').replace('_', ' ').replace('-', ' ').title()
+                pid = str(_uuid.uuid4())
+                conn.execute(
+                    "INSERT INTO projects (project_id, name, description, last_scan_at, total_scans) "
+                    "VALUES (?, ?, ?, ?, (SELECT COUNT(*) FROM scans WHERE filename = ?))",
+                    (pid, proj_name, f"Auto-created from {fname}",
+                     _dt.now(_tz.utc).isoformat(), fname)
+                )
+                conn.execute(
+                    "UPDATE scans SET project_id = ? WHERE filename = ? AND (project_id = '' OR project_id IS NULL)",
+                    (pid, fname)
+                )
+                logger.info("Migrated scans for '%s' to project '%s'", fname, proj_name)
+
+            conn.execute(
+                "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
+                (3,)
+            )
+            logger.info("Schema version 3 applied successfully")
+            current = 3
 
         if current >= CURRENT_SCHEMA_VERSION:
             logger.debug("Schema up to date (version %d)", current)

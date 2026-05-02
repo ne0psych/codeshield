@@ -52,7 +52,7 @@ class _ReportPDF(FPDF):
         self.ln(2)
 
 
-def generate_pdf(scan: dict, findings: list, sbom: dict) -> bytes:
+def generate_pdf(scan: dict, findings: list, sbom: dict, project: dict = None) -> bytes:
     """Generate PDF report and return bytes."""
     pdf = _ReportPDF()
     pdf.alias_nb_pages()
@@ -69,13 +69,19 @@ def generate_pdf(scan: dict, findings: list, sbom: dict) -> bytes:
     # Summary table with borders
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(0)
-    summary = [
+
+    # Build summary including project context
+    summary = []
+    if project:
+        summary.append(("Project", str(project.get("name", ""))))
+        summary.append(("Project ID", str(project.get("project_id", ""))[:12]))
+    summary.extend([
         ("Scan ID",       str(scan.get("scan_id", ""))),
         ("Filename",      str(scan.get("filename", ""))),
         ("Status",        str(scan.get("status", ""))),
-        ("Started",       str(scan.get("started_at", ""))),
+        ("Scan Date",     str(scan.get("started_at", ""))),
         ("Completed",     str(scan.get("completed_at", ""))),
-    ]
+    ])
     for label, value in summary:
         pdf.set_font("Helvetica", "B", 9)
         pdf.set_fill_color(240, 240, 250)

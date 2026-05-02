@@ -32,7 +32,7 @@ def create_app() -> Flask:
     setup_logging(config.logging)
 
     logger.info("=" * 60)
-    logger.info("  CodeShield v2.0 — Starting up")
+    logger.info("  CodeShield v3.0 — Starting up")
     logger.info("=" * 60)
 
     # 2. Initialize database
@@ -82,6 +82,7 @@ def create_app() -> Flask:
     # Security settings
     app.config["MAX_CONTENT_LENGTH"] = config.scan.max_zip_size
     app.config["SECRET_KEY"] = os.urandom(32).hex()
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
 
     # Jinja2 autoescape is enabled by default for .html templates
     # preventing XSS in all rendered output

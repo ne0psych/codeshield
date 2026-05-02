@@ -38,14 +38,14 @@ FINDING_HEADERS = [
 SBOM_HEADERS = ["Name", "Version", "PURL", "License", "Ecosystem"]
 
 
-def generate_excel(scan: dict, findings: list, sbom: dict) -> bytes:
+def generate_excel(scan: dict, findings: list, sbom: dict, project: dict = None) -> bytes:
     """Generate Excel report and return bytes."""
     wb = Workbook()
 
     ws = wb.active
     ws.title = "Dashboard"
     ws.sheet_properties.tabColor = "1F3864"
-    _build_dashboard(ws, scan, findings)
+    _build_dashboard(ws, scan, findings, project=project)
 
     ws2 = wb.create_sheet("Findings")
     ws2.sheet_properties.tabColor = "DC143C"
@@ -82,7 +82,7 @@ def _apply_headers(ws, headers, row=1):
     ws.auto_filter.ref = f"A{row}:{get_column_letter(len(headers))}{row}"
 
 
-def _build_dashboard(ws, scan, findings):
+def _build_dashboard(ws, scan, findings, project=None):
     """Build a clean dashboard summary sheet."""
     ws.column_dimensions["A"].width = 28
     ws.column_dimensions["B"].width = 45
@@ -99,17 +99,21 @@ def _build_dashboard(ws, scan, findings):
     cell2.font = Font(size=10, color="666666", italic=True)
     ws.merge_cells("A2:B2")
 
-    # Scan information section
+    # Scan information section (with project context)
     ws.cell(row=4, column=1, value="SCAN INFORMATION").font = Font(bold=True, size=11, color="1F3864")
     ws.merge_cells("A4:B4")
 
-    info_rows = [
+    info_rows = []
+    if project:
+        info_rows.append(("Project", _safe(project.get("name", ""))))
+        info_rows.append(("Project ID", _safe(project.get("project_id", ""))[:12]))
+    info_rows.extend([
         ("Scan ID",     _safe(scan.get("scan_id", ""))),
         ("Filename",    _safe(scan.get("filename", ""))),
         ("Status",      _safe(scan.get("status", ""))),
-        ("Started",     _safe(scan.get("started_at", ""))),
+        ("Scan Date",   _safe(scan.get("started_at", ""))),
         ("Completed",   _safe(scan.get("completed_at", ""))),
-    ]
+    ])
     for i, (label, value) in enumerate(info_rows, 5):
         lc = ws.cell(row=i, column=1, value=label)
         lc.font = Font(bold=True, size=9)

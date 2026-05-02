@@ -1,116 +1,216 @@
-# CodeShield v2.1 — Enterprise Security Scanner
+<p align="center">
+  <img src="https://img.shields.io/badge/CodeShield-v3.0-1f3864?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0ZWNkYzQiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTEyIDIyczgtNCA4LTEwVjVsLTgtMy04IDN2N2MwIDYgOCAxMCA4IDEweiIvPjwvc3ZnPg==" alt="CodeShield"/>
+  <br/>
+  <strong>Enterprise-grade, multi-dimensional security scanner for codebases</strong>
+</p>
 
-Production-grade, locally-running Python application that performs multi-dimensional security scanning on uploaded ZIP codebases.
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License"/>
+  <img src="https://img.shields.io/badge/plugins-7-blue" alt="Plugins"/>
+  <img src="https://img.shields.io/badge/SBOM-CycloneDX%201.4-orange" alt="SBOM"/>
+</p>
 
-## Features
+---
 
-- **7 Scanner Plugins**: SAST, SCA, Secrets Detection, License Compliance, Supply Chain Security, API Security, Code Quality Analysis
-- **Multi-source Vulnerability Database**: OSV.dev, NVD API v2.0, GitHub Advisory Database, OSS Index
-- **SBOM Generation**: CycloneDX 1.4 format
-- **Rich Report Generation**: Excel (.xlsx) with charts + PDF (.pdf) with severity-grouped sections
-- **Enterprise Dashboard**: Dark/light theme, OWASP heatmap, trend analysis, risk score, real-time SSE progress
-- **Security Enrichment**: CWE, OWASP Top 10, MITRE ATT&CK, PCI-DSS, HIPAA mapping per finding
-- **Trend Analysis**: New vs recurring findings across scans
+## Overview
+
+CodeShield is a **production-ready, locally-running** Python application that performs comprehensive security scanning on uploaded ZIP codebases. It follows a **Project → Scans → Findings** architecture where every scan is scoped to a project for full traceability.
+
+### Key Capabilities
+
+| Category | Details |
+|---|---|
+| **SAST** | 16 pattern rules covering injection, XSS, path traversal, crypto weaknesses |
+| **SCA** | Dependency vulnerability matching via OSV.dev, NVD, GitHub Advisory |
+| **Secrets Detection** | 14 patterns for API keys, tokens, passwords, private keys |
+| **License Compliance** | 729 SPDX license definitions, copyleft/restrictive flagging |
+| **Supply Chain** | Lockfile integrity, typosquatting detection, dependency confusion |
+| **API Security** | Insecure endpoint patterns, missing auth, CORS misconfig |
+| **Code Quality** | Complexity analysis, dead code, TODO/FIXME tracking |
+
+### Security Enrichment (per finding)
+
+Every finding includes: **CWE ID**, **OWASP Top 10** mapping, **MITRE ATT&CK** technique, **PCI-DSS** & **HIPAA** references, exploit availability, fix effort estimate, and trend analysis (new vs recurring).
+
+---
 
 ## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/codeshield.git
+# Clone
+git clone https://github.com/ne0psych/codeshield.git
 cd codeshield
 
-# Create virtual environment
+# Virtual environment
 python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-# Activate (Linux/Mac)
-source venv/bin/activate
+source venv/bin/activate        # Linux/macOS
+# venv\Scripts\activate         # Windows
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Start the server
+# (Optional) Configure API keys
+cp .env.example .env
+# Edit .env with your NVD/GitHub keys
+
+# Start
 python run.py
 ```
 
-Open http://127.0.0.1:5000 in your browser. Upload a ZIP file to scan.
+Open **http://127.0.0.1:5000** — create a project, upload a ZIP, and scan.
 
-## Configuration
+---
 
-Configuration is loaded from `config.toml` with environment variable overrides:
-
-```bash
-# Optional: NVD API key for faster sync (50 req/30s vs 5 req/30s)
-export CODESHIELD_NVD_API_KEY=your-key-here
-
-# Optional: GitHub token for advisory sync
-export GITHUB_TOKEN=ghp_your-token-here
-
-# Optional: Custom database path
-export CODESHIELD_DB_PATH=/custom/path/codeshield.db
-```
-
-See `config.toml` for all available options.
-
-## Architecture
+## Project Architecture
 
 ```
 codeshield/
-├── app.py              # Flask application factory
-├── config.py           # Multi-source config (env + TOML)
-├── engine.py           # Scan orchestrator (zero detection logic)
-├── context.py          # File tree & scan context builder
-├── mappings.py         # Central CWE/OWASP/MITRE/compliance mappings
-├── database/           # SQLite with WAL mode, auto-migration
-├── plugins/            # Auto-discovered scanner plugins
-│   ├── sast_plugin.py
-│   ├── sca_plugin.py
-│   ├── secrets_plugin.py
-│   ├── license_plugin.py
-│   ├── supplychain_plugin.py
-│   ├── apisecurity_plugin.py
-│   └── codequality_plugin.py
-├── reports/            # Excel + PDF report generators
-├── structures/         # Aho-Corasick, Interval Tree, Bloom Filter, DAG
-├── sync/               # Multi-source vulnerability data sync
-│   ├── osv.py          # OSV.dev API
-│   ├── nvd.py          # NVD REST API v2.0
+├── app.py                  # Flask application factory + startup
+├── config.py               # Multi-source config (TOML + env vars)
+├── engine.py               # Scan orchestrator (zero detection logic)
+├── context.py              # File tree & scan context builder
+├── mappings.py             # CWE / OWASP / MITRE / compliance mappings
+├── database/
+│   ├── connection.py       # SQLite WAL-mode connection manager
+│   └── schema.py           # Auto-migrating schema (v1 → v3)
+├── plugins/                # Auto-discovered scanner plugins
+│   ├── base.py             # Plugin interface + Finding dataclass
+│   ├── registry.py         # Plugin auto-discovery
+│   ├── sast_plugin.py      # Static analysis (regex + AST)
+│   ├── sca_plugin.py       # Software composition analysis
+│   ├── secrets_plugin.py   # Secrets & credential detection
+│   ├── license_plugin.py   # License compliance (SPDX)
+│   ├── supplychain_plugin.py  # Supply chain security
+│   ├── apisecurity_plugin.py  # API security patterns
+│   └── codequality_plugin.py  # Code quality metrics
+├── reports/
+│   ├── pdf_report.py       # PDF generation (fpdf2)
+│   └── excel_report.py     # Excel generation (openpyxl + charts)
+├── structures/             # Custom data structures
+│   ├── aho_corasick.py     # Multi-pattern string matching
+│   ├── interval_tree.py    # Version range matching
+│   ├── bloom_filter.py     # Probabilistic dedup
+│   ├── dependency_graph.py # DAG for dependency analysis
+│   ├── inverted_index.py   # Full-text search index
+│   └── lru_cache.py        # Thread-safe LRU cache
+├── sync/                   # Vulnerability data sync engine
+│   ├── engine.py           # Orchestrator (blocking + async threads)
+│   ├── osv.py              # OSV.dev API
+│   ├── nvd.py              # NVD REST API v2.0
 │   ├── github_advisory.py  # GitHub Advisory GraphQL
-│   ├── ossindex.py     # Sonatype OSS Index
-│   ├── spdx.py         # SPDX license list
-│   └── engine.py       # Sync orchestrator (bg + primary)
-├── web/                # Flask routes + SSE
-├── templates/          # Jinja2 templates
-└── static/             # CSS + JS dashboard
+│   ├── ossindex.py         # Sonatype OSS Index
+│   ├── spdx.py             # SPDX license list
+│   └── rules.py            # Remote SAST/secrets rule sync
+├── web/
+│   ├── routes.py           # Flask routes (project CRUD, upload, reports)
+│   └── sse.py              # Server-Sent Events for scan progress
+├── templates/
+│   └── index.html          # SPA dashboard template
+└── static/
+    ├── app.js              # Project-centric UI logic
+    └── style.css           # Dark/light theme design system
 ```
 
-## API Endpoints
+---
+
+## API Reference
+
+### Projects
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | Dashboard UI |
-| POST | `/api/upload` | Upload ZIP for scanning |
-| GET | `/api/scan/<id>/results` | Get scan results |
-| GET | `/api/scan/<id>/events` | SSE progress stream |
-| GET | `/api/scan/<id>/report/excel` | Download Excel report |
-| GET | `/api/scan/<id>/report/pdf` | Download PDF report |
-| GET | `/api/scan/<id>/risk-score` | Get computed risk score |
-| GET | `/api/scan/<id>/trends` | Get trend analysis |
-| GET | `/api/scans` | Scan history |
-| GET | `/api/health` | Health check |
-| POST | `/api/finding/<id>/false-positive` | Toggle false positive |
+| `GET` | `/api/projects` | List all projects with aggregated stats |
+| `POST` | `/api/projects` | Create new project `{name, description}` |
+| `GET` | `/api/projects/<id>` | Project detail + scan history |
+| `PUT` | `/api/projects/<id>` | Update project name/description |
+| `DELETE` | `/api/projects/<id>` | Delete project and all scans |
 
-## Security
+### Scanning
 
-- ZIP bomb defense (file count, size, nesting depth limits)
-- Path traversal prevention (symlink + `..` rejection)
-- Parameterized SQL everywhere (no string interpolation)
-- Jinja2 autoescape + JS DOM text content for XSS prevention
-- Secret redaction in findings
-- `secure_filename()` for upload sanitization
-- UUID validation on all scan endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/upload` | Upload ZIP (requires `project_id` or `project_name`) |
+| `GET` | `/api/scan/<id>/events` | SSE stream for real-time scan progress |
+| `GET` | `/api/scan/<id>/results` | Full scan results with project context |
+| `GET` | `/api/scan/<id>/risk-score` | Computed risk score (0–100) |
+| `GET` | `/api/scan/<id>/trends` | New vs recurring analysis |
+
+### Reports
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/scan/<id>/report/pdf` | Download PDF report |
+| `GET` | `/api/scan/<id>/report/excel` | Download Excel report |
+
+### System
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/health` | Health check + plugin list |
+| `GET` | `/api/scans` | Recent scan history |
+| `GET` | `/api/sync/<source>` | Data source sync status |
+
+---
+
+## Configuration
+
+All settings are in `config.toml` with environment variable overrides:
+
+```bash
+# Optional: NVD API key (increases rate limit 10x)
+export CODESHIELD_NVD_API_KEY=your-key
+
+# Optional: GitHub token for advisory sync
+export GITHUB_TOKEN=ghp_your-token
+
+# Optional: Custom database path
+export CODESHIELD_DB_PATH=./data/codeshield.db
+```
+
+See `.env.example` for all available variables.
+
+---
+
+## Data Model
+
+```
+Project (1) ──→ (N) Scan ──→ (N) Finding
+                      │
+                      └──→ SBOM (CycloneDX)
+```
+
+- **Projects** group related scans (e.g., "My Web App")
+- **Scans** are individual ZIP uploads with timestamped results
+- **Findings** are severity-classified vulnerabilities tied to a specific scan
+- Existing scans are auto-migrated to projects on first v3 startup
+
+---
+
+## Vulnerability Data Sources
+
+| Source | Type | Sync Mode |
+|--------|------|-----------|
+| [OSV.dev](https://osv.dev) | Vulnerabilities | Blocking (startup) |
+| [SPDX](https://spdx.org) | License definitions | Blocking (startup) |
+| [NVD](https://nvd.nist.gov) | CVE database | Background thread |
+| [GitHub Advisory](https://github.com/advisories) | Security advisories | Background thread |
+| [OSS Index](https://ossindex.sonatype.org) | Component analysis | Background thread |
+
+---
+
+## Security Practices
+
+- **ZIP bomb defense** — file count, uncompressed size, and nesting depth limits
+- **Path traversal prevention** — symlink resolution + `..` rejection before extraction
+- **Parameterized SQL** — no string interpolation in any query
+- **XSS prevention** — Jinja2 autoescape + DOM `textContent` in JS
+- **Input validation** — `secure_filename()`, UUID validation, size limits
+- **Secret redaction** — detected secrets are masked in findings
+- **No `shell=True`** — all subprocess calls use argument lists
+
+---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) for details.

@@ -1,54 +1,56 @@
-# Python
+# ── Python ──
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 *.egg-info/
+*.egg
 dist/
 build/
-*.egg
 
-# Virtual environment
+# ── Virtual Environment ──
 venv/
 .venv/
 env/
 
-# IDE
+# ── IDE ──
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.gemini/
 
-# OS
+# ── OS ──
 .DS_Store
 Thumbs.db
 
-# Runtime data (databases)
-data/
+# ── Runtime Data ──
 codeshield_data/
+data/
 *.db
 *.db-wal
 *.db-shm
 
-# Logs
+# ── Logs ──
 logs/
 *.log
 
-# Uploaded / temp files
+# ── Temp / Uploads ──
 codeshield_upload_*
 codeshield_scan_*
 tmp/
 
-# Environment
+# ── Environment ──
 .env
 .env.local
+.env.production
 
-# Reports (generated at runtime)
+# ── Generated Reports ──
 *.xlsx
 *.pdf
 
-# Legacy files (deprecated - do not commit)
+# ── Legacy (deprecated — do not commit) ──
 scanner.py
 report_generator.py
 main.py
